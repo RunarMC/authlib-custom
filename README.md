@@ -1,4 +1,5 @@
-# minecraft-authlib
+# minecraft-authlib 
+## This build was specificly made for RunarMC
 This is the source code of Minecraft's `authlib 1.6.25` which you can use from Minecraft 1.12.2 up to Minecraft 1.16.3 inclusive (*1.16.4 introduced social interactions so this library got changed to v2*) both on the client and the server.
 
 ## Why does this even exist?
