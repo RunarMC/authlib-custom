@@ -45,7 +45,7 @@ import org.apache.logging.log4j.Logger;
 
 public class YggdrasilMinecraftSessionService extends HttpMinecraftSessionService {
 
-    private static final String[] WHITELISTED_DOMAINS = new String[]{".minecraft.net", ".mojang.com"};
+    private static final String[] WHITELISTED_DOMAINS = new String[]{".runarmc.net", ".mojang.com"};
 
     private static final Logger LOGGER = LogManager.getLogger();
 
@@ -105,7 +105,7 @@ public class YggdrasilMinecraftSessionService extends HttpMinecraftSessionServic
             if (response != null && response.getId() != null) {
                 GameProfile result = new GameProfile(response.getId(), user.getName());
                 if (response.getProperties() != null) {
-                    result.getProperties().putAll((Multimap) response.getProperties());
+                    result.getProperties().putAll(response.getProperties());
                 }
                 return result;
             }
@@ -120,36 +120,24 @@ public class YggdrasilMinecraftSessionService extends HttpMinecraftSessionServic
     @Override
     public Map<MinecraftProfileTexture.Type, MinecraftProfileTexture> getTextures(GameProfile profile, boolean requireSecure) {
         MinecraftTexturesPayload result;
-        Property textureProperty = (Property) Iterables.getFirst(profile.getProperties().get("textures"), null);
+        Property textureProperty = Iterables.getFirst(profile.getProperties().get("textures"), null);
         if (textureProperty == null) {
+            LOGGER.error("Textures payload has been tampered with (textures)");
             return new HashMap<>();
         }
-        if (requireSecure) {
-            if (!textureProperty.hasSignature()) {
-                LOGGER.error("Signature is missing from textures payload");
-                throw new InsecureTextureException("Signature is missing from textures payload");
-            }
-            if (!textureProperty.isSignatureValid(this.publicKey)) {
-                LOGGER.error("Textures payload has been tampered with (signature invalid)");
-                throw new InsecureTextureException("Textures payload has been tampered with (signature invalid)");
-            }
-        }
+
         try {
             String json = new String(Base64.decodeBase64(textureProperty.getValue()), Charsets.UTF_8);
-            result = (MinecraftTexturesPayload) this.gson.fromJson(json, MinecraftTexturesPayload.class);
+            result = this.gson.fromJson(json, MinecraftTexturesPayload.class);
         } catch (JsonParseException e) {
-            LOGGER.error("Could not decode textures payload", (Throwable) e);
+            LOGGER.error("Could not decode textures payload", e);
             return new HashMap<>();
         }
         if (result == null || result.getTextures() == null) {
+            LOGGER.error("Textures payload has been tampered with (null)");
             return new HashMap<>();
         }
-        for (Map.Entry<MinecraftProfileTexture.Type, MinecraftProfileTexture> entry : (Iterable<Map.Entry<MinecraftProfileTexture.Type, MinecraftProfileTexture>>) result.getTextures().entrySet()) {
-            if (!isWhitelistedDomain(((MinecraftProfileTexture) entry.getValue()).getUrl())) {
-                LOGGER.error("Textures payload has been tampered with (non-whitelisted domain)");
-                return new HashMap<>();
-            }
-        }
+
         return result.getTextures();
     }
 
@@ -158,28 +146,26 @@ public class YggdrasilMinecraftSessionService extends HttpMinecraftSessionServic
         if (profile.getId() == null) {
             return profile;
         }
-        if (!requireSecure) {
-            return (GameProfile) this.insecureProfiles.getUnchecked(profile);
-        }
+
         return fillGameProfile(profile, true);
     }
 
     protected GameProfile fillGameProfile(GameProfile profile, boolean requireSecure) {
         try {
-            URL url = HttpAuthenticationService.constantURL(this.baseUrl + "profile/" + UUIDTypeAdapter.fromUUID(profile.getId()));
+            URL url = HttpAuthenticationService.constantURL(this.baseUrl + "profile/" + profile.getId().toString());
             url = HttpAuthenticationService.concatenateURL(url, "unsigned=" + (!requireSecure ? 1 : 0));
-            MinecraftProfilePropertiesResponse response = getAuthenticationService().<MinecraftProfilePropertiesResponse>makeRequest(url, null, MinecraftProfilePropertiesResponse.class);
+            MinecraftProfilePropertiesResponse response = getAuthenticationService().makeRequest(url, null, MinecraftProfilePropertiesResponse.class);
             if (response == null) {
-                LOGGER.debug("Couldn't fetch profile properties for " + profile + " as the profile does not exist");
+                LOGGER.warn("Couldn't fetch profile properties for " + profile + " as the profile does not exist");
                 return profile;
             }
             GameProfile result = new GameProfile(response.getId(), response.getName());
-            result.getProperties().putAll((Multimap) response.getProperties());
-            profile.getProperties().putAll((Multimap) response.getProperties());
-            LOGGER.debug("Successfully fetched profile properties for " + profile);
+            result.getProperties().putAll(response.getProperties());
+            profile.getProperties().putAll(response.getProperties());
+            LOGGER.info("Successfully fetched profile properties for " + profile);
             return result;
         } catch (AuthenticationException e) {
-            LOGGER.warn("Couldn't look up profile properties for " + profile, (Throwable) e);
+            LOGGER.warn("Couldn't look up profile properties for " + profile, e);
             return profile;
         }
     }

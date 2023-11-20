@@ -29,8 +29,7 @@ public class PropertyMap extends ForwardingMultimap<String, Property> {
             PropertyMap result = new PropertyMap();
             if (json instanceof JsonObject) {
                 JsonObject object = (JsonObject) json;
-                for (Iterator<Map.Entry<String, JsonElement>> localIterator1 = object.entrySet().iterator(); localIterator1.hasNext();) {
-                    Map.Entry<String, JsonElement> entry = localIterator1.next();
+                for (Map.Entry<String, JsonElement> entry : object.entrySet()) {
                     if (entry.getValue() instanceof JsonArray) {
                         for (JsonElement element : (JsonArray) entry.getValue()) {
                             result.put(entry.getKey(), new Property(entry.getKey(), element.getAsString()));

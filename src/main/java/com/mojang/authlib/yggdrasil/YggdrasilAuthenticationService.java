@@ -109,6 +109,7 @@ public class YggdrasilAuthenticationService extends HttpAuthenticationService {
             }
             return (T) response;
         } catch (IOException | IllegalStateException | JsonParseException e) {
+            System.out.println(input);
             throw new AuthenticationUnavailableException("Cannot contact authentication server", e);
         }
     }

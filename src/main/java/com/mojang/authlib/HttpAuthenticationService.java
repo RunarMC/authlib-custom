@@ -95,13 +95,12 @@ public abstract class HttpAuthenticationService extends BaseAuthenticationServic
         Validate.notNull(post);
         Validate.notNull(contentType);
         HttpURLConnection connection = createUrlConnection(url);
-        connection.addRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/119.0");
 
         byte[] postAsBytes = post.getBytes(Charsets.UTF_8);
         connection.setRequestProperty("Content-Type", contentType + "; charset=utf-8");
         connection.setRequestProperty("Content-Length", "" + postAsBytes.length);
         connection.setDoOutput(true);
-        LOGGER.debug("Writing POST data to " + url + ": " + post);
+        LOGGER.info("Writing POST data to " + url + ": " + post);
         OutputStream outputStream = null;
         try {
             outputStream = connection.getOutputStream();
@@ -109,22 +108,22 @@ public abstract class HttpAuthenticationService extends BaseAuthenticationServic
         } finally {
             IOUtils.closeQuietly(outputStream);
         }
-        LOGGER.debug("Reading data from " + url);
+        LOGGER.info("Reading data from " + url);
         InputStream inputStream = null;
         try {
             inputStream = connection.getInputStream();
             String result = IOUtils.toString(inputStream, Charsets.UTF_8);
-            LOGGER.debug("Successful read, server response was " + connection.getResponseCode());
-            LOGGER.debug("Response: " + result);
+            LOGGER.info("Successful read, server response was " + connection.getResponseCode());
+            LOGGER.info("Response: " + result);
             return result;
         } catch (IOException e) {
             IOUtils.closeQuietly(inputStream);
             inputStream = connection.getErrorStream();
             if (inputStream != null) {
-                LOGGER.debug("Reading error page from " + url);
+                LOGGER.info("Reading error page from " + url);
                 String result = IOUtils.toString(inputStream, Charsets.UTF_8);
-                LOGGER.debug("Successful read, server response was " + connection.getResponseCode());
-                LOGGER.debug("Response: " + result);
+                LOGGER.info("Successful read, server response was " + connection.getResponseCode());
+                LOGGER.info("Response: " + result);
                 return result;
             }
             LOGGER.debug("Request failed", e);
@@ -141,25 +140,24 @@ public abstract class HttpAuthenticationService extends BaseAuthenticationServic
     public String performGetRequest(URL url, @Nullable String authentication) throws IOException {
         Validate.notNull(url);
         HttpURLConnection connection = createUrlConnection(url);
-        connection.addRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/119.0");
         if (authentication != null)
             connection.setRequestProperty("Authorization", authentication);
-        LOGGER.debug("Reading data from " + url);
+        LOGGER.info("Reading data from " + url);
         InputStream inputStream = null;
         try {
             inputStream = connection.getInputStream();
             String result = IOUtils.toString(inputStream, Charsets.UTF_8);
-            LOGGER.debug("Successful read, server response was " + connection.getResponseCode());
-            LOGGER.debug("Response: " + result);
+            LOGGER.info("Successful read, server response was " + connection.getResponseCode());
+            LOGGER.info("Response: " + result);
             return result;
         } catch (IOException e) {
             IOUtils.closeQuietly(inputStream);
             inputStream = connection.getErrorStream();
             if (inputStream != null) {
-                LOGGER.debug("Reading error page from " + url);
+                LOGGER.info("Reading error page from " + url);
                 String result = IOUtils.toString(inputStream, Charsets.UTF_8);
-                LOGGER.debug("Successful read, server response was " + connection.getResponseCode());
-                LOGGER.debug("Response: " + result);
+                LOGGER.info("Successful read, server response was " + connection.getResponseCode());
+                LOGGER.info("Response: " + result);
                 return result;
             }
             LOGGER.debug("Request failed", e);
